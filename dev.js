@@ -1,4 +1,4 @@
-﻿const mineflayer = require('mineflayer');
+const mineflayer = require('mineflayer');
 const traslator = require('./lang_traslate.json')
 const levenshtein = require('js-levenshtein');
 const {once} = require('events');
@@ -132,7 +132,7 @@ var newBot = (username) => new Promise((res, rej) => {
 	
 	async function openChests () {
 		chestId++;
-		if(chestId > chest.length) {
+		if(chestId > chests.length) {
 			chestId = 0
 			sell(openChests)
 		}
