@@ -27,7 +27,7 @@ var newBot = (username) => new Promise((res, rej) => {
 	
 	var windowOpened = 0
 	var menu = false
-	var Vec3 = require('Vec3')
+	var Vec3 = require('vec3')
 	var chestId = 0;
 	var chests = [Vec3(1772, 9, 1634), Vec3(1770, 6, 1633), Vec3(1771, 5, 1636)]
 	const bot = mineflayer.createBot({
