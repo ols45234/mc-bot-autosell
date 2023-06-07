@@ -16,6 +16,6 @@
     "fs": "^0.0.1-security",
     "js-levenshtein": "^1.1.6",
     "mineflayer": "^4.8.1",
-    "Vec3": "^0.1.8"
+    "vec3": "^0.1.8"
   }
 }
