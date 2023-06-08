@@ -1,4 +1,4 @@
-﻿const mineflayer = require('mineflayer');
+const mineflayer = require('mineflayer');
 const traslator = require('./lang_traslate.json')
 const levenshtein = require('js-levenshtein');
 const {once} = require('events');
@@ -208,10 +208,10 @@ var newBot = (username) => new Promise((res, rej) => {
 				await once(bot, 'windowOpen')
 				function click() {
 					const slots = bot.inventory.slots
-					if(slots.filter(item => (item != null && item.name == 'melon')).reduce(((a, n) => a + n.count), 0) > 128) {
+					if(slots.filter(item => (item != null && item.name == 'melon')).reduce(((a, n) => a + n.count), 0) > 257) {
 						bot.clickWindow(23, 0, 0)
 						if(bot.currentWindow?.title)
-							setTimeout(() => {click()}, 100)
+							setTimeout(() => {click()}, 200)
 						else {
 							console.log('window killed! trying to call another sell function...')
 							sell(callback)
