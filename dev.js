@@ -1,4 +1,4 @@
-const mineflayer = require('mineflayer');
+﻿const mineflayer = require('mineflayer');
 const traslator = require('./lang_traslate.json')
 const levenshtein = require('js-levenshtein');
 const {once} = require('events');
@@ -24,12 +24,15 @@ app.use(express.static(__dirname));
 
 
 var newBot = (username) => new Promise((res, rej) => {
-	
+	var lastMessage = ''
 	var windowOpened = 0
 	var menu = false
 	var Vec3 = require('vec3')
 	var chestId = 0;
-	var chests = [Vec3(1772, 9, 1634), Vec3(1770, 6, 1633), Vec3(1771, 5, 1636)]
+	var chests = [
+	{pos: new Vec3(1772, 9, 1634), direction: new Vec3(0, -1, 0), cursor: new Vec3(0.5, 0.5, 0.5)},
+	{pos: Vec3(1770, 6, 1633), direction: new Vec3(1, 0, 0), cursor: new Vec3(0.9375, 0.5, 0.5)}, 
+	{pos: Vec3(1771, 5, 1636), direction: new Vec3(0, 1, 0), cursor: new Vec3(0.5, 0.5, 0.5)}]
 	const bot = mineflayer.createBot({
 	  host: cfg.ip,
 	  port: cfg.port,
@@ -38,6 +41,7 @@ var newBot = (username) => new Promise((res, rej) => {
 	  version: cfg.version
 	})
 	const mcData = require('minecraft-data')(bot.version)
+	const ItemsLib = require('prismarine-item')(bot.registry)
 	
 	
 	bot.on('windowOpen', window => {
@@ -76,6 +80,10 @@ var newBot = (username) => new Promise((res, rej) => {
 
 	bot.on('message', async (message) => {
 		msg = message.toString();
+		if(lastMessage == msg)
+			return
+		if(["┏", "┃", "┖"].some(e => msg.includes(e)) || ["Ваша территория"].includes(msg))
+			return
 		console.log(`${msg}`)
 		msg = msg.replaceAll('\\,', '.');
 		msg.replaceAll('\\,', '.');
@@ -90,6 +98,7 @@ var newBot = (username) => new Promise((res, rej) => {
 			once(bot, 'spawn').then(() => {
 				//bot.chat('/call red1OOner')
 				openChests()
+				//logInventory(bot)
 			})
 		}, 2000)
 		if (msg.includes('@cmd:'))
@@ -110,8 +119,9 @@ var newBot = (username) => new Promise((res, rej) => {
 		if (msg.includes('@inv')) logInventory(bot)
 			
 		if (msg.includes('@sell')) {
-			sell(() => {console.log('done!')})
+			sell(() => {console.log('done!\n')})
 		}
+		lastMessage = msg
 	})
 	bot.on('kicked', (err) => {
 		console.log(err);
@@ -135,9 +145,10 @@ var newBot = (username) => new Promise((res, rej) => {
 		if(chestId > chests.length) {
 			chestId = 0
 			sell(openChests)
+			return
 		}
 			
-		openChest(withdrawItems, chests[chestId])
+		openChest(withdrawItems, chests[chestId-1])
 	}
 	
 	async function openChest (callback, pos) {
@@ -145,12 +156,21 @@ var newBot = (username) => new Promise((res, rej) => {
 			matching: ['chest', 'trapped_chest'].map(name => mcData.blocksByName[name].id),
 			maxDistance: 3
 		})*/
-		const chestToOpen = bot.blockAt(pos)
+		const chestToOpen = bot.blockAt(pos.pos)
 		
 		if(!chestToOpen)
 			return console.log('no chest found!')
-		chest = await bot.openChest(chestToOpen)
-		return
+		//console.log(chestToOpen)
+		await bot.lookAt(chestToOpen.position.offset(0.5, 0.5, 0.5), false)
+		await new Promise((res) => setTimeout(res, 2000))
+		var chest = undefined;
+		while (!chest) {
+			console.log('trying to open chest...')
+			chest = await new Promise((res) => {
+				bot.openChest(chestToOpen, pos.direction, pos.cursor).then(c => res(c)); 
+				setTimeout((() => res()), 1000) })
+		}
+		return callback(chest)
 	}
 	
 	async function withdrawItems (chest) {
@@ -160,14 +180,17 @@ var newBot = (username) => new Promise((res, rej) => {
 		//return 0;
 		if (itemsToWithdraw.length === 0) {
 			chest.close()
+			console.log('chest is empty!')
 			return openChests()
 		}
 
 		const itemToWithdraw = itemsToWithdraw.shift()
+		//console.log('withdrawing items...')
+		//process.stdout.write('.')
 
 		//await chest.withdraw(itemToWithdraw.type, null, itemToWithdraw.count)
 		const slot = itemToWithdraw.slot
-		bot._client.write('window_click',{windowId:chest.id,slot:slot,mouseButton:1,action:1000,mode:4,item:require('prismarine-item')(bot.registry).toNotch(itemToWithdraw)})
+		bot._client.write('window_click',{windowId:chest.id,slot:slot,mouseButton:1,action:1000,mode:4,item:ItemsLib.toNotch(itemToWithdraw)})
 
 		setTimeout(() => withdrawItems(chest), 50);
 	}
@@ -185,7 +208,7 @@ var newBot = (username) => new Promise((res, rej) => {
 				await once(bot, 'windowOpen')
 				function click() {
 					const slots = bot.inventory.slots
-					if(slots.some(item => (item != null && item.name == 'melon'))) {
+					if(slots.filter(item => (item != null && item.name == 'melon')).reduce(((a, n) => a + n.count), 0) > 128) {
 						bot.clickWindow(23, 0, 0)
 						if(bot.currentWindow?.title)
 							setTimeout(() => {click()}, 100)
@@ -203,7 +226,7 @@ var newBot = (username) => new Promise((res, rej) => {
 			}
 		}
 		if(!found) {
-			setTimeout(() => sell(callback), 3660000) //61 min
+			setTimeout(() => sell(callback), 60000) //1 min
 			console.log('not found!')
 		}
 	}
