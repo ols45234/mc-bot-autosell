@@ -96,7 +96,7 @@ var newBot = (username) => new Promise((res, rej) => {
 			console.log('openning menu...')
 			menu = true
 			once(bot, 'spawn').then(() => {
-				//bot.chat('/call red1OOner')
+				bot.chat('/baltop')
 				openChests()
 				//logInventory(bot)
 			})
